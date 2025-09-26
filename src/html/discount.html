@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shopping</title>
+    <script src="js/vue.min.js"></script>
+    <script src="js/axios.min.js"></script>
+</head>
+<body>
+<div id="app">
+    <input type="button" value="Go to Cart" @click="countData">
+
+    <div v-if="showTable==true">
+        <div><span>Membership</span>
+            Yes<input type="radio" value="true" v-model="sendData.membershipStatus">
+            No<input type="radio" value="false" v-model="sendData.membershipStatus"></div>
+        <table>
+            <tr>
+                <td></td>
+                <td>id</td>
+                <td>name</td>
+                <td>price</td>
+                <td v-if="sendData.membershipStatus == 'true' ">promotion</td>
+                <td>count</td>
+            </tr>
+            <tr v-for="item , index in items">
+                <td>{{index+1}}</td>
+                <td>{{item.name}}</td>
+                <td>{{item.price|showPrice}}</td>
+                <td v-if="sendData.membershipStatus == 'true'">{{item.promotion|showPrice}}</td>
+                <td>
+                    <input type="button" value="-" @click="dec(index)">
+                    {{sendData.count[index].count}}
+                    <input type="button" value="+" @click="inc(index)">
+                </td>
+                <td></td>
+            </tr>
+        </table>
+        <input type="button" value="Buy" @click="buyItems">
+        <div>{{totalPrice | showPrice }}</div>
+    </div>
+
+</div>
+</body>
+</html>
+<script type="text/javascript">
+    var app = new Vue({
+        el: '#app',
+        data: {
+            items: [],
+            showTable:false,
+            sendData:{
+                membershipStatus:false,
+                count: []
+            },
+            totalPrice:0
+        },
+        methods: {
+            dec: function (index) {
+                if (this.sendData.count[index].count > 0) {
+                    this.sendData.count[index].count--
+                }
+            },
+            inc: function (index) {
+                this.sendData.count[index].count++
+            },
+
+
+            priceList: function () {
+                var than = this
+                var myUrl = "http://localhost:8082/item/list"
+                axios.get(myUrl).then(function (res) {
+                    if (res.data.code!="200"){
+                        alert("Cannot find any data!")
+                        return
+                    }
+                    than.items=res.data.data
+                })
+            },
+
+            countData: function(){
+                for (var i = 0; i < this.items.length; i++) {
+                     var goods = this.items[i];
+                    this.sendData.count.push({
+                        name: goods.name,
+                        price: goods.price,
+                        promotion: goods.promotion,
+                        count: 0
+                    });
+                }
+                this.showTable = true
+            },
+
+
+
+            buyItems: function () {
+                console.log(this.sendData)
+                var than = this
+                var myUrl = "http://localhost:8082/item/buy"
+                axios.post(myUrl,than.sendData).then(function (res) {
+                    if (res.data.code!="200"){
+                        return null
+                    }
+                    than.totalPrice=res.data.data
+                })
+            }
+        },
+        mounted() {
+            this.priceList()
+        },
+        filters: {
+            showPrice(price) {
+                if (price != null){
+                    return "$" + price.toFixed(2)
+                }else {
+                    return "No"
+                }
+            }
+        }
+    })
+</script>

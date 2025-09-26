@@ -1,0 +1,16 @@
+#有代码提醒的，是系统自带的配置信息
+spring:
+  profiles:
+    active: dev
+  application:
+    name: assignment
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/items_price?useUnicode=true&autoReconnect=true&autoReconnectForPools=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: ok
+#输出mybatis执行sql的日志
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath:mapper/*.xml #加载映射文件

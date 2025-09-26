@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping</title>
+    <script src="js/vue.min.js"></script>
+    <script src="js/axios.min.js"></script>
+    <style type="text/css">
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        #app {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+
+
+        input[type="button"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="button"]:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        input[type="button"]:active {
+            transform: translateY(0);
+        }
+
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table th, table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        table tr:hover {
+            background-color: #f9f9f9;
+        }
+
+
+        div span {
+            font-weight: 600;
+            margin-right: 15px;
+        }
+
+        input[type="radio"] {
+            margin: 0 10px 0 20px;
+        }
+
+        .membership-section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-control input[type="button"] {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+        .total-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #d32f2f;
+            margin: 20px 0;
+            padding: 15px;
+            border-top: 2px solid #eee;
+        }
+
+
+        [v-if], [v-show] {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        [v-if="false"], [v-show="false"] {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 14px;
+            }
+
+            table th, table td {
+                padding: 8px 10px;
+            }
+
+            #app {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <input type="button" value="Go to Cart" @click="countData">
+
+    <div v-if="showTable==true">
+        <div class="membership-section">
+            <span>Membership</span>
+            Yes<input type="radio" value="true" v-model="sendData.membershipStatus">
+            No<input type="radio" value="false" v-model="sendData.membershipStatus">
+        </div>
+        <table>
+            <tr>
+                <td>id</td>
+                <td>name</td>
+                <td>price</td>
+                <td v-if="sendData.membershipStatus == 'true' ">promotion (count>2)</td>
+                <td>count</td>
+            </tr>
+            <tr v-for="item , index in items">
+                <td>{{index+1}}</td>
+                <td>{{item.name}}</td>
+                <td>{{item.price|showPrice}}</td>
+                <td v-if="sendData.membershipStatus == 'true'">{{item.promotion|showPrice}}</td>
+                <td class="quantity-control">
+                    <input type="button" value="-" @click="dec(index)">
+                    {{sendData.count[index].count}}
+                    <input type="button" value="+" @click="inc(index)">
+                </td>
+                <td></td>
+            </tr>
+        </table>
+        <input type="button" value="Buy" @click="buyItems">
+        <div class="total-price">{{totalPrice | showPrice }}</div>
+    </div>
+
+</div>
+</body>
+</html>
+<script type="text/javascript">
+    var app = new Vue({
+        el: '#app',
+        data: {
+            items: [],
+            showTable:false,
+            sendData:{
+                membershipStatus:false,
+                count: []
+            },
+            totalPrice:0
+        },
+        methods: {
+            dec: function (index) {
+                if (this.sendData.count[index].count > 0) {
+                    this.sendData.count[index].count--
+                }
+            },
+            inc: function (index) {
+                this.sendData.count[index].count++
+            },
+
+
+            priceList: function () {
+                var than = this
+                var myUrl = "http://localhost:8082/item/list"
+                axios.get(myUrl).then(function (res) {
+                    if (res.data.code!="200"){
+                        alert("Cannot find any data!")
+                        return
+                    }
+                    than.items=res.data.data
+                })
+            },
+
+            countData: function(){
+                for (var i = 0; i < this.items.length; i++) {
+                    var goods = this.items[i];
+                    this.sendData.count.push({
+                        name: goods.name,
+                        price: goods.price,
+                        promotion: goods.promotion,
+                        count: 0
+                    });
+                }
+                this.showTable = true
+            },
+
+
+
+            buyItems: function () {
+                console.log(this.sendData)
+                var than = this
+                var myUrl = "http://localhost:8082/item/buy"
+                axios.post(myUrl,than.sendData).then(function (res) {
+                    if (res.data.code!="200"){
+                        return null
+                    }
+                    than.totalPrice=res.data.data
+                })
+            }
+        },
+        mounted() {
+            this.priceList()
+        },
+        filters: {
+            showPrice(price) {
+                if (price != null){
+                    return "$" + price.toFixed(2)
+                }else {
+                    return "No"
+                }
+            }
+        }
+    })
+</script>
